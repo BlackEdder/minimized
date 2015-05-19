@@ -66,11 +66,32 @@ class DifferentialEvolution( RANGE )
         return _randomIndividual();
     }
 
+    void initialize()
+    {
+        foreach( i; 0..(10*randomIndividual().length) )
+        {
+            auto pars = randomIndividual();
+            auto individual = Individual!RANGE( temperatureFunction( pars ),
+                    pars );
+
+            individual.evolutionControl = [uniform( 0.1, 1.2 ),
+                uniform( 0.0, 1.0 )];
+
+            population ~= individual;
+
+            if ( bestFit.temperature.isNaN || bestFit.temperature >= individual.temperature )
+                bestFit = individual;
+        }
+
+    }
+
     /// Perform one minimization step (generation)
     ///
     /// Return true if improvement was made
     bool step()
     {
+        if (population.length == 0)
+            initialize;
         Individual!RANGE[] processed;
         Individual!RANGE[] toProcess = population;
         bool anyAccepted = false;
@@ -136,21 +157,6 @@ class DifferentialEvolution( RANGE )
 
     RANGE minimize() 
     {
-
-        foreach( i; 0..(10*randomIndividual().length) )
-        {
-            auto pars = randomIndividual();
-            auto individual = Individual!RANGE( temperatureFunction( pars ),
-                    pars );
-
-            individual.evolutionControl = [uniform( 0.1, 1.2 ),
-                uniform( 0.0, 1.0 )];
-
-            population ~= individual;
-
-            if ( bestFit.temperature.isNaN || bestFit.temperature >= individual.temperature )
-                bestFit = individual;
-        }
 
         size_t sinceAccepted = 0;
 
