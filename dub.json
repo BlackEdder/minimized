@@ -4,6 +4,7 @@
 	"description": "Differential evolution for multidimensional minimization.",
 	"copyright": "Copyright © 2015, Edwin van Leeuwen",
 	"authors": ["Edwin van Leeuwen"],
+    "license":"Apache v2.0",
 	"dependencies": {
 	}
 }
