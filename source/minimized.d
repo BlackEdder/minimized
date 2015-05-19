@@ -41,6 +41,10 @@ private struct Individual( RANGE )
 
 class DifferentialEvolution( RANGE )
 {
+    double tau1 = 0.1; /// Tweaking parameter, see Brest et al for details
+    double tau2 = 0.1; /// Tweaking parameter, see Brest et al for details
+    Individual!RANGE bestFit; /// Current bestFit found
+
     @property void temperatureFunction(F)(auto ref F fp) 
         if (isCallable!F)
     {
@@ -63,12 +67,71 @@ class DifferentialEvolution( RANGE )
         return _randomIndividual();
     }
 
+    /// Perform one minimization step (generation)
+    ///
+    /// Return true if improvement was made
+    bool step()
+    {
+        Individual!RANGE[] processed;
+        Individual!RANGE[] toProcess = population;
+        bool anyAccepted = false;
+        foreach( _; 0..toProcess.length )
+        {
+            auto x = toProcess.front;
+            toProcess.popFront;
+
+            auto abc = (processed ~ toProcess);
+
+            abc.partialShuffle( 3 );
+
+            size_t chosenR = uniform( 0, x.parameters.length-1 );
+
+            Individual!RANGE y;
+            if (uniform(0.0,1.0)<tau1)
+                y.evolutionControl ~= uniform(0.1,1.2);
+            else
+                y.evolutionControl ~= x.evolutionControl[0];
+            if (uniform(0.0,1.0)<tau2)
+                y.evolutionControl ~= uniform(0.0,1.0);
+            else
+                y.evolutionControl ~= x.evolutionControl[1];
+
+
+
+            foreach( i; 0..(x.parameters.length ) )
+            {
+                if ( i == chosenR 
+                        || uniform(0.0,1.0) < y.evolutionControl[1] )
+                    y.parameters ~= abc[0].parameters[i]
+                        + y.evolutionControl[0]
+                        *( abc[1].parameters[i] 
+                                - abc[2].parameters[i] );
+                else
+                    y.parameters ~= x.parameters[i];
+            }
+            y.temperature = temperatureFunction( y.parameters );
+
+            if ( y.temperature < x.temperature )
+            {
+                anyAccepted = true;
+                processed ~= y;
+                if (y.temperature < bestFit.temperature)
+                    bestFit = y;
+            } else {
+                processed ~= x;
+            }
+        }
+
+        if (anyAccepted) 
+        {
+            population = processed;
+        }
+        return anyAccepted;
+    }
+
+
     RANGE minimize() 
     {
-        Individual!RANGE[] population;
-
-        double tau1 = 0.1;
-        double tau2 = 0.1;
 
         foreach( i; 0..(10*randomIndividual().length) )
         {
@@ -89,62 +152,11 @@ class DifferentialEvolution( RANGE )
 
         while( sinceAccepted < 10 )
         {
-            Individual!RANGE[] processed;
-            Individual!RANGE[] toProcess = population;
-            bool anyAccepted = false;
-            foreach( _; 0..toProcess.length )
-            {
-                auto x = toProcess.front;
-                toProcess.popFront;
-
-                auto abc = (processed ~ toProcess);
-
-                abc.partialShuffle( 3 );
-
-                size_t chosenR = uniform( 0, x.parameters.length-1 );
-
-                Individual!RANGE y;
-                if (uniform(0.0,1.0)<tau1)
-                    y.evolutionControl ~= uniform(0.1,1.2);
-                else
-                    y.evolutionControl ~= x.evolutionControl[0];
-                if (uniform(0.0,1.0)<tau2)
-                    y.evolutionControl ~= uniform(0.0,1.0);
-                else
-                    y.evolutionControl ~= x.evolutionControl[1];
-
-
-
-                foreach( i; 0..(x.parameters.length ) )
-                {
-                    if ( i == chosenR 
-                            || uniform(0.0,1.0) < y.evolutionControl[1] )
-                        y.parameters ~= abc[0].parameters[i]
-                            + y.evolutionControl[0]
-                            *( abc[1].parameters[i] 
-                                    - abc[2].parameters[i] );
-                    else
-                        y.parameters ~= x.parameters[i];
-                }
-                y.temperature = temperatureFunction( y.parameters );
-
-                if ( y.temperature < x.temperature )
-                {
-                    anyAccepted = true;
-                    processed ~= y;
-                    if (y.temperature < bestFit.temperature)
-                        bestFit = y;
-                } else {
-                    processed ~= x;
-                }
-            }
-
-            if (!anyAccepted)
-                sinceAccepted++;
-            else 
+            if (step())
             {
                 sinceAccepted = 0;
-                population = processed;
+            } else {
+                sinceAccepted++;
             }
         }
 
@@ -152,7 +164,7 @@ class DifferentialEvolution( RANGE )
     }
 
     private:
-        Individual!RANGE bestFit;
+        Individual!RANGE[] population;
 
         double delegate( RANGE parameters ) _temperatureFunction;
         RANGE delegate() _randomIndividual;
