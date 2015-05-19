@@ -43,7 +43,6 @@ class DifferentialEvolution( RANGE )
 {
     double tau1 = 0.1; /// Tweaking parameter, see Brest et al for details
     double tau2 = 0.1; /// Tweaking parameter, see Brest et al for details
-    Individual!RANGE bestFit; /// Current bestFit found
 
     @property void temperatureFunction(F)(auto ref F fp) 
         if (isCallable!F)
@@ -129,6 +128,11 @@ class DifferentialEvolution( RANGE )
         return anyAccepted;
     }
 
+    /// Return the current best fitting parameters
+    RANGE currentBestFit()
+    {
+        return bestFit.parameters;
+    }
 
     RANGE minimize() 
     {
@@ -168,6 +172,7 @@ class DifferentialEvolution( RANGE )
 
         double delegate( RANGE parameters ) _temperatureFunction;
         RANGE delegate() _randomIndividual;
+        Individual!RANGE bestFit; /// Current bestFit found
 }
 
 ///
@@ -217,4 +222,5 @@ unittest
     auto min = de.minimize;
 
     assert( equal!approxEqual( min, [ 1, 2 ] ) );
+    assert( equal( min, de.currentBestFit ) );
 }
