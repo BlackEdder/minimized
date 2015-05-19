@@ -39,9 +39,9 @@ private struct Individual( RANGE )
 
 class DifferentialEvolution( RANGE )
 {
-    double function( RANGE parameters ) temperatureFunction;
+    double delegate( RANGE parameters ) temperatureFunction;
 
-    RANGE function() randomIndividual;
+    RANGE delegate() randomIndividual;
 
     RANGE minimize() 
     {
@@ -139,14 +139,38 @@ class DifferentialEvolution( RANGE )
 unittest
 {
     // Function to minimize
-    auto fn = ( double[] xs ) {
+    auto fn = delegate double( double[] xs ) {
         auto p = [ 1.0, 2.0, 10, 20, 30 ];
         return p[2] * (xs[0] - p[0]) * (xs[0] - p[0]) +
             p[3] * (xs[1] - p[1]) * (xs[1] - p[1]) + p[4];
     };
 
     // Function which will create random initial sets of parameters 
-    auto initFunction = ()
+    auto initFunction = delegate double[]()
+    {
+        return [ uniform( 0.0, 10.0 ), uniform( 0.0, 10.0 )];
+    };
+
+    auto de = new DifferentialEvolution!(double[])();
+    de.temperatureFunction = fn;
+    de.randomIndividual = initFunction;
+
+    auto min = de.minimize;
+
+    assert( equal!approxEqual( min, [ 1, 2 ] ) );
+}
+
+unittest
+{
+    // Function to minimize
+    auto p = [ 1.0, 2.0, 10, 20, 30 ];
+    auto fn = ( double[] xs ) {
+        return p[2] * (xs[0] - p[0]) * (xs[0] - p[0]) +
+            p[3] * (xs[1] - p[1]) * (xs[1] - p[1]) + p[4];
+    };
+
+    // Function which will create random initial sets of parameters 
+    auto initFunction = delegate double[]()
     {
         return [ uniform( 0.0, 10.0 ), uniform( 0.0, 10.0 )];
     };
