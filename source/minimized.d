@@ -4,6 +4,8 @@ import std.algorithm : swapAt;
 import std.math : isNaN, approxEqual;
 import std.range : front, popFront, isRandomAccessRange;
 import std.random : uniform, rndGen, isUniformRNG;
+import std.traits : isCallable;
+import std.functional : toDelegate;
 import std.exception : enforce;
 
 version( unittest )
@@ -39,9 +41,27 @@ private struct Individual( RANGE )
 
 class DifferentialEvolution( RANGE )
 {
-    double delegate( RANGE parameters ) temperatureFunction;
+    @property void temperatureFunction(F)(auto ref F fp) 
+        if (isCallable!F)
+    {
+        _temperatureFunction = toDelegate!F(fp);
+    }
 
-    RANGE delegate() randomIndividual;
+    double temperatureFunction( RANGE parameters )
+    {
+        return _temperatureFunction( parameters );
+    }
+
+    @property void randomIndividual(F)(auto ref F fp) 
+        if (isCallable!F)
+    {
+        _randomIndividual = toDelegate!F(fp);
+    }
+
+    RANGE randomIndividual()
+    {
+        return _randomIndividual();
+    }
 
     RANGE minimize() 
     {
@@ -133,20 +153,23 @@ class DifferentialEvolution( RANGE )
 
     private:
         Individual!RANGE bestFit;
+
+        double delegate( RANGE parameters ) _temperatureFunction;
+        RANGE delegate() _randomIndividual;
 }
 
 ///
 unittest
 {
     // Function to minimize
-    auto fn = delegate double( double[] xs ) {
+    auto fn = ( double[] xs ) {
         auto p = [ 1.0, 2.0, 10, 20, 30 ];
         return p[2] * (xs[0] - p[0]) * (xs[0] - p[0]) +
             p[3] * (xs[1] - p[1]) * (xs[1] - p[1]) + p[4];
     };
 
     // Function which will create random initial sets of parameters 
-    auto initFunction = delegate double[]()
+    auto initFunction = ()
     {
         return [ uniform( 0.0, 10.0 ), uniform( 0.0, 10.0 )];
     };
