@@ -1,0 +1,9 @@
+{
+	"name": "minimized",
+    "targetType":"library",
+	"description": "Differential evolution for multidimensional minimization.",
+	"copyright": "Copyright © 2015, Edwin van Leeuwen",
+	"authors": ["Edwin van Leeuwen"],
+	"dependencies": {
+	}
+}
