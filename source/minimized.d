@@ -10,6 +10,7 @@ import std.exception : enforce;
 
 version( unittest )
 {
+    import std.math : pow;
     import std.stdio : writeln;
     import std.algorithm : equal;
 }
@@ -104,7 +105,7 @@ class DifferentialEvolution( RANGE )
 
             abc.partialShuffle( 3 );
 
-            size_t chosenR = uniform( 0, x.parameters.length-1 );
+            size_t chosenR = uniform!"[]"( 0, x.parameters.length-1 );
 
             Individual!RANGE y;
             if (uniform(0.0,1.0)<tau1)
@@ -229,4 +230,27 @@ unittest
 
     assert( equal!approxEqual( min, [ 1, 2 ] ) );
     assert( equal( min, de.currentBestFit ) );
+}
+
+// One dimensional system
+unittest
+{
+    // Function to minimize
+    auto fn = ( double[] xs ) {
+        return pow(xs[0],2);
+    };
+
+    // Function which will create random initial sets of parameters 
+    auto initFunction = ()
+    {
+        return [ uniform( 0.0, 10.0 )];
+    };
+
+    auto de = new DifferentialEvolution!(double[])();
+    de.temperatureFunction = fn;
+    de.randomIndividual = initFunction;
+
+    auto min = de.minimize;
+
+    assert( equal!approxEqual( min, [ 0 ] ) );
 }
