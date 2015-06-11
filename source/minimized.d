@@ -105,7 +105,8 @@ class DifferentialEvolution( RANGE )
 
             abc.partialShuffle( 3 );
 
-            size_t chosenR = uniform!"[]"( 0, x.parameters.length-1 );
+            // uniform int has by default [) borders, so can use length
+            size_t chosenR = uniform( 0, x.parameters.length );
 
             Individual!RANGE y;
             if (uniform(0.0,1.0)<tau1)
