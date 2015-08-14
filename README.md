@@ -1,4 +1,4 @@
-# Minimized
+# Minimized [![Build Status](https://travis-ci.org/BlackEdder/minimized.svg?branch=master)](https://travis-ci.org/BlackEdder/minimized)
 
 Library for (multi)dimensional minimization written in D. Currently limited to an implementation of adaptive differential evolution as explained in:
 
